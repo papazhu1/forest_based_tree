@@ -21,15 +21,15 @@ from CMM import *
 class ExperimentSetting():
     def __init__(self,number_of_branches_threshold,df_names,number_of_estimators,fixed_params,
                  num_of_iterations=30):
-        self.num_of_iterations=num_of_iterations
-        self.number_of_branches_threshold = number_of_branches_threshold
-        self.df_names = df_names
-        self.fixed_params = fixed_params
-        self.number_of_estimators = number_of_estimators
+        self.num_of_iterations=num_of_iterations # 30
+        self.number_of_branches_threshold = number_of_branches_threshold # [3000]
+        self.df_names = df_names # ['iris']
+        self.fixed_params = fixed_params # {}
+        self.number_of_estimators = number_of_estimators # 100
     def run(self):
         self.experiments = []
-        for threshold in self.number_of_branches_threshold:
-            for df_name in self.df_names:
+        for threshold in self.number_of_branches_threshold: # 现在就只有一个[3000]
+            for df_name in self.df_names: # 现在就只有一个['iris']
                 df, x_columns, y_column, feature_types = get_dataset_by_string(df_name)
                 d = {}
                 d['max_number_of_branches'] = threshold
