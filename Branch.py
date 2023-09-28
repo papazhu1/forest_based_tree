@@ -14,13 +14,13 @@ class Branch:
         Second option is to get the number of samples in branch and the labels
         probability vector - relevant for creating a branch out of an existing tree leaf.
         """
-        self.feature_types=feature_types
-        self.label_names=label_names
-        self.number_of_features=len(feature_names)
-        self.feature_names=feature_names
+        self.feature_types=feature_types # 特征类型列表
+        self.label_names=label_names # 标签名称列表
+        self.number_of_features=len(feature_names) # 特征数量
+        self.feature_names=feature_names # 特征名称列表
         self.features_upper=[np.inf]*self.number_of_features #upper bound of the feature for the given rule
         self.features_lower=[-np.inf]*self.number_of_features #lower bound of the feature for the given rule
-        self.label_probas=label_probas
+        self.label_probas=label_probas # 
         self.number_of_samples=number_of_samples #save number of samples in leaf (not relevant for the current model)
         self.categorical_features_dict={}
     def addCondition(self, feature, threshold, bound):
@@ -58,10 +58,10 @@ class Branch:
         with b. As describe in the algorithm.
         """
         new_label_probas=[k+v for k,v in zip(self.label_probas,other_branch.label_probas)]
-        new_number_of_samples=np.sqrt(self.number_of_samples * other_branch.number_of_samples)
+        new_number_of_samples=np.sqrt(self.number_of_samples * other_branch.number_of_samples) # 启发式算法根号下乘积，而直接相加可能会重复相加
         new_b = Branch(self.feature_names,self.feature_types,self.label_names,new_label_probas,new_number_of_samples)
         new_b.features_upper, new_b.features_lower = list(self.features_upper), list(self.features_lower)
-        for feature in range(self.number_of_features):
+        for feature in range(self.number_of_features): # 遍历更新特征上下界
             new_b.addCondition(feature, other_branch.features_upper[feature], 'upper')
             new_b.addCondition(feature, other_branch.features_lower[feature], 'lower')
         new_b.categorical_features_dict = dict(self.categorical_features_dict)
