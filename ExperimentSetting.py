@@ -14,7 +14,6 @@ from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import cohen_kappa_score
 import pickle
-from CMM import *
 
 
 
@@ -91,12 +90,15 @@ class ExperimentSetting():
             result_dict['decision tree training time'] = (datetime.datetime.now() - start_temp).total_seconds()
 
             #Train CMM tree
+            '''
             start_temp = datetime.datetime.now()
             cmm_data = pd.DataFrame(trainAndValidation_x,columns=x_columns)
             cmm_data[y_column] = trainAndValidation_y
             cmm_dt = self.fit_cmm_tree(cmm_data,x_columns,y_column,rf)
             result_dict['cmm tree training time'] = (datetime.datetime.now() - start_temp).total_seconds()
 
+            '''
+            
             #record experiment results
             result_dict.update(self.ensemble_measures(test_x,test_y,rf))
             result_dict.update(self.new_model_measures(test_x,test_y,new_model,branches_df))
