@@ -28,30 +28,30 @@ class ConjunctionSet():
 
     def generateBranches(self):
         trees=[estimator.tree_ for estimator in self.model.estimators_]
-        self.branches_lists=[self.get_tree_branches(tree_,i) for i,tree_ in enumerate(trees) if i in self.relevant_indexes]
-        for list_indx,branch_list in enumerate(self.branches_lists):
-            for leaf_index,branch in enumerate(branch_list):
-                branch.leaves_indexes=[str(list_indx)+'_'+str(leaf_index)]
-    def get_tree_branches(self,tree_,tree_index):
-        leaf_indexes = [i for i in range(tree_.node_count) if tree_.children_left[i] == -1 and tree_.children_right[i] == -1]
+        self.branches_lists=[self.get_tree_branches(tree_,i) for i,tree_ in enumerate(trees) if i in self.relevant_indexes] # 对每棵树求分支，汇总成分支列表的列表
+        for list_indx,branch_list in enumerate(self.branches_lists): # 枚举分支列表，每个分支列表由一棵树生成
+            for leaf_index,branch in enumerate(branch_list): # 枚举分支列表中的分支
+                branch.leaves_indexes=[str(list_indx)+'_'+str(leaf_index)] # 叶子索引名称是列表序号+叶子序号
+    def get_tree_branches(self,tree_,tree_index): # 先求出树的所有叶节点，再根据每个叶节点回溯到根节点，生成分支，汇总成一个分支列表
+        leaf_indexes = [i for i in range(tree_.node_count) if tree_.children_left[i] == -1 and tree_.children_right[i] == -1] # 找出所有叶子结点的代码
         branches=[self.get_branch_from_leaf_index(tree_,leaf_index) for leaf_index in leaf_indexes]
         return branches
-    def get_branch_from_leaf_index(self,tree_,leaf_index):
-        sum_of_probas=np.sum(tree_.value[leaf_index][0])
-        label_probas=[i/sum_of_probas for i in tree_.value[leaf_index][0]]
+    def get_branch_from_leaf_index(self,tree_,leaf_index): # 从叶子结点的序号回溯到根节点，生成分支的函数
+        sum_of_probas = np.sum(tree_.value[leaf_index][0]) # 是对每个叶子结点的每个类别数求和
+        label_probas=[i/sum_of_probas for i in tree_.value[leaf_index][0]] # 生成每个类别的概率列表
         new_branch=Branch(self.feature_names,self.feature_types,self.label_names,label_probas=label_probas,
-                          number_of_samples=tree_.n_node_samples[leaf_index])#initialize branch
+                          number_of_samples=tree_.n_node_samples[leaf_index])# initialize branch  
         node_id=leaf_index
         while node_id: #iterate over all nodes in branch
             ancesor_index=np.where(tree_.children_left==node_id)[0] #assuming left is the default for efficiency purposes
-            bound='upper'
-            if len(ancesor_index)==0:
+            bound='upper' # 如果某个节点的左子节点是node的话，那么就是设定了上界
+            if len(ancesor_index)==0: # 如果在ancestor中都没找到的话就代表某个节点的右子节点是node
                 bound='lower'
                 ancesor_index = np.where(tree_.children_right == node_id)[0]
-            new_branch.addCondition(tree_.feature[ancesor_index[0]], tree_.threshold[ancesor_index[0]], bound)
-            node_id=ancesor_index[0]
+            new_branch.addCondition(tree_.feature[ancesor_index[0]], tree_.threshold[ancesor_index[0]], bound) # 根据特征和阈值添加一个条件
+            node_id=ancesor_index[0] # 从子节点往根节点找
         return new_branch
-    def buildConjunctionSet(self):
+    def buildConjunctionSet(self):# 注意区分连接集和分支集，连接集是分支被合并后的集合
         conjunctionSet=self.branches_lists[0]
         excluded_branches=[]
         for i,branch_list in enumerate(self.branches_lists[1:]):
