@@ -52,7 +52,7 @@ class ConjunctionSet():
             node_id=ancesor_index[0] # 从子节点往根节点找
         return new_branch
     def buildConjunctionSet(self):# 注意区分连接集和分支集，连接集是分支被合并后的集合
-        conjunctionSet=self.branches_lists[0]
+        conjunctionSet=self.branches_lists[0] # 初始化连接集，只含第一棵树的分支列表
         excluded_branches=[]
         for i,branch_list in enumerate(self.branches_lists[1:]):
             print('Iteration '+str(i+1)+": "+str(len(conjunctionSet))+" conjunctions")
