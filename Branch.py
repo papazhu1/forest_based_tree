@@ -31,7 +31,7 @@ class Branch:
         if bound == 'lower':
             if self.features_lower[feature] < threshold:
                 self.features_lower[feature] = threshold
-                if '=' in self.feature_names[feature] and threshold >= 0:
+                if '=' in self.feature_names[feature] and threshold >= 0: # 如果特征名如“水果=苹果”，则拆分为字典形式
                     splitted = self.feature_names[feature].split('=')
                     self.categorical_features_dict[splitted[0]]=splitted[1]
         else:
@@ -41,13 +41,15 @@ class Branch:
         """
         check wether Branch b can be merged with the "self" Branch. Returns Boolean answer.
         """
-        for categorical_feature in self.categorical_features_dict:
+        for categorical_feature in self.categorical_features_dict: # 类别特征不相等则矛盾
             if categorical_feature in other_branch.categorical_features_dict and self.categorical_features_dict[categorical_feature] != other_branch.categorical_features_dict[categorical_feature]:
                 return True
         for i in range(self.number_of_features):
             if self.features_upper[i] <= other_branch.features_lower[i] + EPSILON or self.features_lower[i] + EPSILON >= other_branch.features_upper[i]:
                 return True
-            if self.feature_types[i]=='int' and min(self.features_upper[i],other_branch.features_upper[i])%1>0 and \
+            # 如果自己这个特征类型已经是整数了，如果另一个分支的上界比自己的上界小，且另一个分支的上界是小数，且两个分支的上界差值小于1，则矛盾
+            # 比如[1,2]和[1,1.5],也是没有意义的
+            if self.feature_types[i] == 'int' and min(self.features_upper[i],other_branch.features_upper[i])%1>0 and \
                                     min(self.features_upper[i],other_branch.features_upper[i])-max(self.features_lower[i],other_branch.features_lower[i])<1:
                 return True
 
