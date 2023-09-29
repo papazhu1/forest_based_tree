@@ -120,19 +120,22 @@ class Branch:
         features['probas']=np.array(self.label_probas)
         return  features
 
-    def calculate_branch_probability_by_ecdf(self, ecdf): # ecdf 是一个函数列表，它包含了每个特征的 ECDF 函数。这些 ECDF 函数描述了每个特征的值在数据集中的累积概率分布。
+    # 计算这个分支的概率，这个概率是根据每个特征的累积概率分布函数计算概率的乘积计算的
+    def calculate_branch_probability_by_ecdf(self, ecdf): # ecdf 是一个函数列表，它包含了每个特征的 ECDF 函数。这些 ECDF 函数描述了每个特征的值在数据集中的累积概率分布,前提条件是所有的特征都是独立的。
         features_probabilities=[] # ECDF在ConjunctionSet中定义
         delta = 0.000000001 # 防止概率为0
         for i in range(len(ecdf)):
             probs=ecdf[i]([self.features_lower[i],self.features_upper[i]])
-            features_probabilities.append((probs[1]-probs[0]+delta))
-        return np.product(features_probabilities)
-    def calculate_branch_probability_by_range(self, ranges): # 根据范围计算分支概率，好像没有被用到
+            features_probabilities.append((probs[1]-probs[0]+delta)) 
+        return np.product(features_probabilities) # np.product()是求列表元素的乘积
+    
+    def calculate_branch_probability_by_range(self, ranges): # 根据范围计算分支概率，全部当成均匀分布了，好像没有被用到
         features_probabilities = 1
         for range, lower, upper in zip(ranges, self.features_lower, self.features_upper):
             probs = min(1,(upper-lower)/range)
         features_probabilities = features_probabilities*probs
         return features_probabilities
+    
     def is_excludable_branch(self,threshold): # 判断分支是否可以被排除，如果最大概率大于阈值，则可以被排除，感觉违反常理了
         if max(self.label_probas)/np.sum(self.label_probas)>threshold:
             return True
@@ -150,7 +153,7 @@ class Branch:
                 if associative_leaves[leaf1+'|'+leaf2]==0:
                     return False
         return True
-    def number_of_unseen_pairs(self,associative_leaves): #
+    def number_of_unseen_pairs(self,associative_leaves): # 计算分支中没有关联的叶子对的数量
         count=0
         for leaf1 in self.leaves_indexes:
             for leaf2 in self.leaves_indexes:
