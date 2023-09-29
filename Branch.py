@@ -122,18 +122,18 @@ class Branch:
 
     def calculate_branch_probability_by_ecdf(self, ecdf): # ecdf 是一个函数列表，它包含了每个特征的 ECDF 函数。这些 ECDF 函数描述了每个特征的值在数据集中的累积概率分布。
         features_probabilities=[]
-        delta = 0.000000001
+        delta = 0.000000001 # 防止概率为0
         for i in range(len(ecdf)):
             probs=ecdf[i]([self.features_lower[i],self.features_upper[i]])
             features_probabilities.append((probs[1]-probs[0]+delta))
         return np.product(features_probabilities)
-    def calculate_branch_probability_by_range(self, ranges):
+    def calculate_branch_probability_by_range(self, ranges): # 根据范围计算分支概率，好像没有被用到
         features_probabilities = 1
         for range, lower, upper in zip(ranges, self.features_lower, self.features_upper):
             probs = min(1,(upper-lower)/range)
         features_probabilities = features_probabilities*probs
         return features_probabilities
-    def is_excludable_branch(self,threshold):
+    def is_excludable_branch(self,threshold): # 判断分支是否可以被排除，如果最大概率大于阈值，则可以被排除，感觉违反常理了
         if max(self.label_probas)/np.sum(self.label_probas)>threshold:
             return True
         return False
