@@ -67,13 +67,13 @@ class ConjunctionSet():
         print('Final CS size: '+str(len(self.conjunctionSet)))
     def exclude_branches_from_cs(self,cs,threshold):
         filtered_cs=[]
-        excludable_brancehs=[]
+        excludable_branches=[]
         for branch in cs:
             if branch.is_excludable_branch(threshold):
-                excludable_brancehs.append(branch)
+                excludable_branches.append(branch)
             else:
                 filtered_cs.append(branch)
-        return filtered_cs,excludable_brancehs
+        return filtered_cs,excludable_branches
     def filter_conjunction_set(self,cs):
         if len(cs) <= self.amount_of_branches_threshold:
             return cs
