@@ -23,7 +23,7 @@ class Branch:
         self.label_probas=label_probas # 
         self.number_of_samples=number_of_samples #save number of samples in leaf (not relevant for the current model)
         self.categorical_features_dict={}
-    def addCondition(self, feature, threshold, bound):
+    def addCondition(self, feature, threshold, bound): # 这个称为changeCondition更合适吧，因为是更新上下界的阈值，而不是添加新的条件
         """
         This function gets feature index, its threshold for the condition and whether
         it is upper or lower bound. It updates the features thresholds for the given rule.
@@ -92,22 +92,25 @@ class Branch:
     def printBranch(self):
         # print the branch by using tostring()
         print(self.toString())
+
+
     def containsInstance(self, instance):
         """This function gets an ibservation as an input. It returns True if the set of rules
         that represented by the branch matches the instance and false otherwise.
         """
-        if np.sum(self.features_upper >= instance)==len(instance) and np.sum(self.features_lower < instance)==len(instance):
+        # 把所有true加起来，如果等于特征数量，则说明所有特征都满足条件
+        if np.sum(self.features_upper >= instance)==len(instance) and np.sum(self.features_lower < instance)==len(instance): 
             return True
         return False
     def getLabel(self):
-        # Return the predicted label accordint to the branch
+        # Return the predicted label according to the branch
         return np.argmax(self.label_probas)
     def containsInstance(self, v):
         for i,lower,upper in zip(range(len(v)),self.features_lower,self.features_upper):
             if v[i]>upper or v[i]<=lower:
                 return False
         return True
-    def get_branch_dict(self,ecdf):
+    def get_branch_dict(self,ecdf): # 将分支转换为字典形式
         features={}
         for feature,upper_value,lower_value in zip(range(len(self.features_upper)),self.features_upper,self.features_lower):
             features[str(feature)+'_upper']=upper_value
@@ -117,7 +120,7 @@ class Branch:
         features['probas']=np.array(self.label_probas)
         return  features
 
-    def calculate_branch_probability_by_ecdf(self, ecdf):
+    def calculate_branch_probability_by_ecdf(self, ecdf): # ecdf 是一个函数列表，它包含了每个特征的 ECDF 函数。这些 ECDF 函数描述了每个特征的值在数据集中的累积概率分布。
         features_probabilities=[]
         delta = 0.000000001
         for i in range(len(ecdf)):
