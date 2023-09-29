@@ -143,7 +143,7 @@ class Branch:
                 return False
         return True
     def is_valid_association(self,associative_leaves): # 判断分支是否是有效的关联分支，使用了一个字典，这个字典是在ConjunctionSet中定义的
-        for leaf1 in self.leaves_indexes:
+        for leaf1 in self.leaves_indexes: # 字典索引是两个叶子的索引，值是0或1，0表示两个叶子之间没有关联，1表示有关联
             for leaf2 in self.leaves_indexes:
                 if leaf1 == leaf2:
                     continue
