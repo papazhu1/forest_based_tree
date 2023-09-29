@@ -39,7 +39,7 @@ class Branch:
                 self.features_upper[feature] = threshold
     def contradictBranch(self, other_branch):
         """
-        check wether Branch b can be merged with the "self" Branch. Returns Boolean answer.
+        check weather Branch b can be merged with the "self" Branch. Returns Boolean answer.
         """
         for categorical_feature in self.categorical_features_dict: # 类别特征不相等则矛盾
             if categorical_feature in other_branch.categorical_features_dict and self.categorical_features_dict[categorical_feature] != other_branch.categorical_features_dict[categorical_feature]:
@@ -59,7 +59,7 @@ class Branch:
         This method gets Branch b and create a new branch which is a merge of the "self" object
         with b. As describe in the algorithm.
         """
-        new_label_probas=[k+v for k,v in zip(self.label_probas,other_branch.label_probas)]
+        new_label_probas=[k+v for k,v in zip(self.label_probas,other_branch.label_probas)] # 概率直接相加，因为这里的概率只是为了算类别占比
         new_number_of_samples=np.sqrt(self.number_of_samples * other_branch.number_of_samples) # 启发式算法根号下乘积，而直接相加可能会重复相加
         new_b = Branch(self.feature_names,self.feature_types,self.label_names,new_label_probas,new_number_of_samples)
         new_b.features_upper, new_b.features_lower = list(self.features_upper), list(self.features_lower)
@@ -121,7 +121,7 @@ class Branch:
         return  features
 
     def calculate_branch_probability_by_ecdf(self, ecdf): # ecdf 是一个函数列表，它包含了每个特征的 ECDF 函数。这些 ECDF 函数描述了每个特征的值在数据集中的累积概率分布。
-        features_probabilities=[]
+        features_probabilities=[] # ECDF在ConjunctionSet中定义
         delta = 0.000000001 # 防止概率为0
         for i in range(len(ecdf)):
             probs=ecdf[i]([self.features_lower[i],self.features_upper[i]])
@@ -137,12 +137,12 @@ class Branch:
         if max(self.label_probas)/np.sum(self.label_probas)>threshold:
             return True
         return False
-    def is_addable(self,other):
+    def is_addable(self,other): # 这个函数没有被用到，也是查看是否可以merge的
         for feature in range(self.number_of_features):
             if self.features_upper[feature] + EPSILON < other.features_lower[feature] or other.features_upper[feature] + EPSILON < self.features_lower[feature]:
                 return False
         return True
-    def is_valid_association(self,associative_leaves):
+    def is_valid_association(self,associative_leaves): # 判断分支是否是有效的关联分支，使用了一个字典，这个字典是在ConjunctionSet中定义的
         for leaf1 in self.leaves_indexes:
             for leaf2 in self.leaves_indexes:
                 if leaf1 == leaf2:
@@ -150,7 +150,7 @@ class Branch:
                 if associative_leaves[leaf1+'|'+leaf2]==0:
                     return False
         return True
-    def number_of_unseen_pairs(self,associative_leaves):
+    def number_of_unseen_pairs(self,associative_leaves): #
         count=0
         for leaf1 in self.leaves_indexes:
             for leaf2 in self.leaves_indexes:
