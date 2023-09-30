@@ -65,7 +65,7 @@ class ConjunctionSet():
         excluded_branches = []
         for i, branch_list in enumerate(self.branches_lists[1:]):
             print('Iteration ' + str(i + 1) + ": " + str(len(conjunctionSet)) + " conjunctions")
-            filter = False if i == len(self.branches_lists[1:]) else True
+            filter = False if i == len(self.branches_lists[1:]) else True # 最后一次的时候不过滤得剩固定数量的分支
             conjunctionSet = self.merge_branch_with_conjunctionSet(branch_list, conjunctionSet, filter=filter)
             # print('i='+str(i))
             if i >= self.exclusion_starting_point and len(conjunctionSet) > 0.8 * self.amount_of_branches_threshold:
@@ -96,24 +96,23 @@ class ConjunctionSet():
             branches_metrics = [b.calculate_branch_probability_by_ecdf(self.ecdf_dict) for b in cs]
         elif self.filter_approach == 'number_of_samples': # 根据样本数过滤
             branches_metrics = [b.number_of_samples for b in cs]
-        elif self.filter_approach == 'probability_entropy': # 根据概率熵过滤
+        elif self.filter_approach == 'probability_entropy': # 根据 分支概率和分支的熵 两个条件相乘来过滤
             branches_metrics = [b.calculate_branch_probability_by_ecdf(self.ecdf_dict) * (1 - entropy(b.label_probas))
                                 for b in cs]
         elif self.filter_approach == 'entropy': # 根据熵过滤，熵越大就代表越不确定，越不确定就越不好，所以给entropy加负号了
             branches_metrics = [-entropy(b.label_probas) for b in cs] 
-        elif self.filter_approach == 'range':
+        elif self.filter_approach == 'range': # 通过均匀分布来求概率来过滤
             branches_metrics = [b.calculate_branch_probability_by_range(self.ranges) for b in cs]
-        elif self.filter_approach == 'association_probability':
-            branches_metrics = [
-                b.is_valid_association(self.association_leaves) * b.calculate_branch_probability_by_ecdf(self.ecdf_dict)
-                for b in cs]
-        threshold = sorted(branches_metrics, reverse=True)[self.amount_of_branches_threshold - 1]
-        return [b for b, metric in zip(cs, branches_metrics) if metric >= threshold][:self.amount_of_branches_threshold]
+        elif self.filter_approach == 'association_probability': # 先判断分支是否是有效的关联分支，然后再计算分支的概率
+            branches_metrics = [ b.is_valid_association(self.association_leaves)
+                                * b.calculate_branch_probability_by_ecdf(self.ecdf_dict) for b in cs]
+        threshold = sorted(branches_metrics, reverse=True)[self.amount_of_branches_threshold - 1] # 找出最后一位的分支概率，作为阈值
+        return [b for b, metric in zip(cs, branches_metrics) if metric >= threshold][:self.amount_of_branches_threshold] # 如果最后的多个分支概率相同，也不多取
 
-    def merge_branch_with_conjunctionSet(self, branch_list, conjunctionSet, filter=True):
+    def merge_branch_with_conjunctionSet(self, branch_list, conjunctionSet, filter=True): # 将分支和连接集合并
         new_conjunction_set = []
         for b1 in conjunctionSet:
-            new_conjunction_set.extend([b1.mergeBranch(b2) for b2 in branch_list if b1.contradictBranch(b2) == False])
+            new_conjunction_set.extend([b1.mergeBranch(b2) for b2 in branch_list if b1.contradictBranch(b2) == False]) # 判断分支是否矛盾，不矛盾的话合并
         # print('number of branches before filterring: '+str(len(new_conjunction_set)))
         if filter:
             new_conjunction_set = self.filter_conjunction_set(new_conjunction_set)
