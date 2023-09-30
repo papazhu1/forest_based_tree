@@ -54,7 +54,7 @@ class Branch:
                 return True
 
         return False
-    def mergeBranch(self, other_branch):
+    def mergeBranch(self, other_branch): # 这里只是固定将确定的两个分支合并
         """
         This method gets Branch b and create a new branch which is a merge of the "self" object
         with b. As describe in the algorithm.
