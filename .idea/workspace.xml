@@ -5,13 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f9201c4e-8774-42cb-be16-980b1c56501e" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/forest_based_tree.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/forest_based_tree.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Branch.py" beforeDir="false" afterPath="$PROJECT_DIR$/Branch.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ConjunctionSet.py" beforeDir="false" afterPath="$PROJECT_DIR$/ConjunctionSet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Experiment main notebook.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/Experiment main notebook.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/test.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
