@@ -120,7 +120,7 @@ class ConjunctionSet():
         self.number_of_branches_per_iteration.append(len(new_conjunction_set))
         return new_conjunction_set
 
-    def get_conjunction_set_df(self):
+    def get_conjunction_set_df(self): # 将连接集转换为DataFrame
         return pd.DataFrame([b.get_branch_dict(self.ecdf_dict) for b in self.conjunctionSet])
 
     def predict(self, X):
@@ -136,13 +136,13 @@ class ConjunctionSet():
             if conjunction.containsInstance(inst):
                 return conjunction
 
-    def set_ecdf(self, data):
-        self.ecdf_dict = {i: ECDF(data.transpose().T[i]) for i in range(len(self.feature_names))}
+    def set_ecdf(self, data): # ECDF是经验累积分布函数，是一种非参数的统计方法，这里对训练集中的每个特征都计算了一个ECDF
+        self.ecdf_dict = {i: ECDF(data.transpose().T[i]) for i in range(len(self.feature_names))} # data.transpose().T[i]是获取第i列的数据，即第i个特征的数据，然后计算它的ECDF
 
-    def group_by_label_probas(self, conjunctionSet):
+    def group_by_label_probas(self, conjunctionSet): # 将所有结果为同一类的branch分在一起
         probas_hashes = {}
         for i, b in enumerate(conjunctionSet):
-            probas_hash = hash(tuple(b.label_probas))
+            probas_hash = hash(tuple(b.label_probas)) # 只要是相同的东西，hash值一定是一样的
             if probas_hash not in probas_hashes:
                 probas_hashes[probas_hash] = []
             probas_hashes[probas_hash].append(i)
