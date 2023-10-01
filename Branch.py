@@ -102,7 +102,7 @@ class Branch:
         if np.sum(self.features_upper >= instance)==len(instance) and np.sum(self.features_lower < instance)==len(instance): 
             return True
         return False
-    def getLabel(self):
+    def getLabel(self): # 对一个分支，返回概率最大的类别
         # Return the predicted label according to the branch
         return np.argmax(self.label_probas)
     def containsInstance(self, v):
