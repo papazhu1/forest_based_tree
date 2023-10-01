@@ -148,10 +148,10 @@ class ConjunctionSet():
             probas_hashes[probas_hash].append(i)
         return probas_hashes
 
-    def get_ranges(self, original_data):
+    def get_ranges(self, original_data): # 为每个特征计算取值范围
         self.ranges = [max(v) - min(v) for v in original_data.transpose()]
 
-    def get_associative_leaves(self, X):
+    def get_associative_leaves(self, X): # 对不同树上的叶子计算关联性
         association_dict = {}
         for indx, inst in enumerate(X):
             association_dict[indx] = []
@@ -165,12 +165,12 @@ class ConjunctionSet():
             for tree_indx2, tree_2 in enumerate(self.branches_lists):
                 if tree_indx1 == tree_indx2:
                     continue
-                for leaf_index1, leaf1 in enumerate(tree_1):
+                for leaf_index1, leaf1 in enumerate(tree_1): # 先将所有不同树上的两个叶节点的关联度初始化为0
                     for leaf_index2, leaf2 in enumerate(tree_2):
                         self.association_leaves[
                             str(tree_indx1) + '_' + str(leaf_index1) + '|' + str(tree_indx2) + '_' + str(
                                 leaf_index2)] = 0
-        for inst in association_dict:
+        for inst in association_dict: # 
             for leaf1 in association_dict[inst]:
                 for leaf2 in association_dict[inst]:
                     if leaf1 == leaf2:
