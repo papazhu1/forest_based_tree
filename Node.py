@@ -4,11 +4,11 @@ from SplittingFunctions import *
 from scipy.stats import entropy
 EPSILON=0.000001
 class Node():
-    def __init__(self,mask):
+    def __init__(self,mask): # 在决策树新建的时候，传入了长度为len(branches_df)的全是true的列表
         self.mask = mask
     def split(self,df):
         #if np.sum(self.mask)==1 or self.has_same_class(df):
-        if np.sum(self.mask) == 1:
+        if np.sum(self.mask) == 1: # mask中只剩一个true的时候，说明这个节点已经是叶子节点了
             self.left=None
             self.right=None
             return
