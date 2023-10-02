@@ -161,11 +161,11 @@ class ConjunctionSet():
                         association_dict[indx].append(str(tree_indx) + '_' + str(leaf_indx))
         association_dict
         self.association_leaves = {}
-        for tree_indx1, tree_1 in enumerate(self.branches_lists):
+        for tree_indx1, tree_1 in enumerate(self.branches_lists):# 先将所有不同树上的两个叶节点的关联度初始化为0
             for tree_indx2, tree_2 in enumerate(self.branches_lists):
                 if tree_indx1 == tree_indx2:
                     continue
-                for leaf_index1, leaf1 in enumerate(tree_1): # 先将所有不同树上的两个叶节点的关联度初始化为0
+                for leaf_index1, leaf1 in enumerate(tree_1): 
                     for leaf_index2, leaf2 in enumerate(tree_2):
                         self.association_leaves[
                             str(tree_indx1) + '_' + str(leaf_index1) + '|' + str(tree_indx2) + '_' + str(
