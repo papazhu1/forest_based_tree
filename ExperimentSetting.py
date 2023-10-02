@@ -95,7 +95,12 @@ class ExperimentSetting():
             print(branches_df)
             df_dict = {}
             for col in branches_df.columns:
-                df_dict[col] = branches_df[col].values
+
+                # 对DataFrame取一整列是Series类型，而加.values()后就变成了array类型
+                df_dict[col] = branches_df[col].values # 将branches_df的每一列转换成array类型
+                print("df_dict[col]:")
+                print(type(df_dict[col]))
+                print(df_dict[col])
             new_model = Node([True]*len(branches_df))
             new_model.split(df_dict)
             result_dict['new model training time'] = (datetime.datetime.now() - start_temp).total_seconds()
