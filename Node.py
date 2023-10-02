@@ -45,14 +45,14 @@ class Node():
     def select_split_feature(self,df):
         feature_to_value={}
         feature_to_metric={}
-        for feature in self.features:
-           value,metric=self.check_feature_split_value(df,feature)
+        for feature in self.features: # 对每个特征都试一下划分，看看哪个特征的分裂效果最好
+           value,metric=self.check_feature_split_value(df,feature) # 对当前遍历道德被划分特征选出最好的划分点
            feature_to_value[feature] = value
            feature_to_metric[feature] = metric
         feature = min(feature_to_metric, key=feature_to_metric.get)
         return feature,feature_to_value[feature]
 
-    def check_feature_split_value(self,df,feature):
+    def check_feature_split_value(self,df,feature): # 对当前遍历道德被划分特征选出最好的划分点函数
         value_to_metric={}
         values=list(set(list(df[str(feature)+'_upper'][self.mask])+list(df[str(feature)+'_lower'][self.mask])))
         np.random.shuffle(values)
