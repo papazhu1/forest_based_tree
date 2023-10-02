@@ -73,7 +73,7 @@ class ExperimentSetting():
 
             #Train the new model
             start_temp = datetime.datetime.now()
-            branches_df = cs.get_conjunction_set_df().round(decimals=5)
+            branches_df = cs.get_conjunction_set_df().round(decimals=6)
 
             # branches_df 的 columns_name
             # branches_df.columns: Index(['0_upper', '0_lower', '1_upper', '1_lower', '2_upper', '2_lower',
@@ -85,7 +85,8 @@ class ExperimentSetting():
             result_dict['number_of_features_for_new_model'] = len(branches_df.columns)
             
             # 原本是2，我想着iris数据集有3个类别，所以改成3
-            for i in range(3):
+            # 对branches_df加了三列，分别是[setosa][versicolor][virginica]每列上的数值代表了与该分支匹配的示例对应三个类别的概率
+            for i in range(3): 
                 branches_df[rf.classes_[i]] = [probas[i] for probas in branches_df['probas']]
                 print("branches_df[rf.classes_[i]]: ")
                 print(branches_df[rf.classes_[i]])
