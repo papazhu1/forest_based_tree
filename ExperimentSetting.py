@@ -19,7 +19,7 @@ import pickle
 
 class ExperimentSetting():
     def __init__(self,number_of_branches_threshold,df_names,number_of_estimators,fixed_params,
-                 num_of_iterations=30):
+                 num_of_iterations=1):
         self.num_of_iterations=num_of_iterations # 30
         self.number_of_branches_threshold = number_of_branches_threshold # [3000]
         self.df_names = df_names # ['iris']
@@ -79,15 +79,19 @@ class ExperimentSetting():
             # branches_df.columns: Index(['0_upper', '0_lower', '1_upper', '1_lower', '2_upper', '2_lower',
             # '3_upper', '3_lower', 'number_of_samples', 'branch_probability',
             # 'probas'], dtype='object')
-            print("branches_df", branches_df)
-
+            print("branches_df:")
+            print(branches_df)
+            branches_df = branches_df.round(6)
             result_dict['number_of_features_for_new_model'] = len(branches_df.columns)
             
             # 原本是2，我想着iris数据集有3个类别，所以改成3
             for i in range(3):
                 branches_df[rf.classes_[i]] = [probas[i] for probas in branches_df['probas']]
-                print("branches_df[rf.classes_[i]]", branches_df[rf.classes_[i]])
+                print("branches_df[rf.classes_[i]]: ")
+                print(branches_df[rf.classes_[i]])
                 print()
+            print("branches_df_new:")
+            print(branches_df)
             df_dict = {}
             for col in branches_df.columns:
                 df_dict[col] = branches_df[col].values
