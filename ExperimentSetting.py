@@ -74,9 +74,20 @@ class ExperimentSetting():
             #Train the new model
             start_temp = datetime.datetime.now()
             branches_df = cs.get_conjunction_set_df().round(decimals=5)
+
+            # branches_df 的 columns_name
+            # branches_df.columns: Index(['0_upper', '0_lower', '1_upper', '1_lower', '2_upper', '2_lower',
+            # '3_upper', '3_lower', 'number_of_samples', 'branch_probability',
+            # 'probas'], dtype='object')
+            print("branches_df", branches_df)
+
             result_dict['number_of_features_for_new_model'] = len(branches_df.columns)
-            for i in range(2):
+            
+            # 原本是2，我想着iris数据集有3个类别，所以改成3
+            for i in range(3):
                 branches_df[rf.classes_[i]] = [probas[i] for probas in branches_df['probas']]
+                print("branches_df[rf.classes_[i]]", branches_df[rf.classes_[i]])
+                print()
             df_dict = {}
             for col in branches_df.columns:
                 df_dict[col] = branches_df[col].values
@@ -103,7 +114,7 @@ class ExperimentSetting():
             result_dict.update(self.ensemble_measures(test_x,test_y,rf))
             result_dict.update(self.new_model_measures(test_x,test_y,new_model,branches_df))
             result_dict.update(self.decision_tree_measures(test_x,test_y,decision_tree_model))
-            result_dict.update(self.cmm_tree_measures(test_x,test_y,cmm_dt))
+            # result_dict.update(self.cmm_tree_measures(test_x,test_y,cmm_dt))
 
             with open(output_path,'wb') as fp:
                 pickle.dump(result_dict, fp)
