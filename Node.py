@@ -5,8 +5,8 @@ from scipy.stats import entropy
 EPSILON=0.000001
 class Node():
     def __init__(self,mask): # 在决策树新建的时候，传入了长度为 conjunction 个数的全是true的列表
-        self.mask = mask
-    def split(self,df):
+        self.mask = mask # seLf.mask表示当前还在这个节点下的conjunction，是一个boolean list
+    def split(self,df): # 两个终止条件，一个是只剩下一个conjunction了，另一个是 not is_splitable
         #if np.sum(self.mask)==1 or self.has_same_class(df):
         if np.sum(self.mask) == 1: # mask中只剩一个true的时候，说明就只剩下一条规则了，因此这个节点是叶子节点
             self.left=None
@@ -21,6 +21,8 @@ class Node():
             self.left = None
             self.right = None
             return
+        
+        # 如果划分在某个conjunction的中间，则该conjunction会被分到左右子树中，因为确实两边都符合conjunction的条件
         self.left=Node(list(np.logical_and(self.mask,np.logical_or(self.left_mask,self.both_mask))))
         self.right = Node(list(np.logical_and(self.mask,np.logical_or(self.right_mask,self.both_mask))))
         self.left.split(df)
@@ -34,7 +36,7 @@ class Node():
             return False
         return True
 
-    def create_mask(self,df): # 判断每个conjuntion划分到了左子树还是右子树，或者划分值在conjunction该特征的区间内
+    def create_mask(self,df): # 判断每个conjuntion划分到了左子树还是右子树，或者划分值在conjunction该特征的区间内，有别于self.mask
         # 每个结果都类似为[True,False,False,True,False,True,False,False], 是一个 boolean list 
         self.left_mask = df[str(self.split_feature) + "_upper"] <= self.split_value 
         self.right_mask = df[str(self.split_feature) + '_lower'] >= self.split_value
@@ -46,7 +48,7 @@ class Node():
         feature_to_value={}
         feature_to_metric={}
         for feature in self.features: # 对每个特征都试一下划分，看看哪个特征的分裂效果最好
-           value,metric=self.check_feature_split_value(df,feature) # 对当前遍历道德被划分特征选出最好的划分点
+           value,metric=self.check_feature_split_value(df,feature) # 对当前被划分特征选出最好的划分点
            feature_to_value[feature] = value
            feature_to_metric[feature] = metric
         feature = min(feature_to_metric, key=feature_to_metric.get)
@@ -70,10 +72,11 @@ class Node():
         r_df_mask=np.logical_and(np.logical_or(right_mask,both_mask),self.mask) # 利用逻辑或，将分到右子树和分到both的都选出来，再挑出还在当前节点下的
         if np.sum(l_df_mask)==0 or np.sum(r_df_mask)==0: # 如果左子树或者右子树为空，则返回无穷大
             return np.inf
-        l_entropy,r_entropy=self.calculate_entropy(df,l_df_mask),self.calculate_entropy(df,r_df_mask)
-        l_prop=np.sum(l_df_mask)/len(l_df_mask)
-        r_prop=np.sum(r_df_mask)/len(l_df_mask)
-        return l_entropy*l_prop+r_entropy*r_prop
+        l_entropy,r_entropy=self.calculate_entropy(df,l_df_mask),self.calculate_entropy(df,r_df_mask) # 对所有conjunction同等对待，求所有类的平均值，然后求熵
+        l_prop=np.sum(l_df_mask) / len(l_df_mask)
+        # r_prop=np.sum(r_df_mask) / len(l_df_mask) # 这里写错了吧，应该是len(r_df_mask)吧
+        r_prop = np.sum(r_df_mask) / len(r_df_mask)
+        return l_entropy * l_prop + r_entropy * r_prop
 
     def predict_probas_and_depth(self,inst,training_df):
         if self.left is None and self.right is None:
@@ -98,7 +101,7 @@ class Node():
         else:
             return s.replace('lower', 'upper')
     def calculate_entropy(self,test_df,test_df_mask):
-        x = test_df['probas'][test_df_mask].mean()
+        x = test_df['probas'][test_df_mask].mean() # 对conjunction的概率求均值，对每个conjunction的概率同等对待，没有因为conjunction包含的样本数印象
         return entropy(x/x.sum())
     def count_depth(self):
         if self.right==None:
