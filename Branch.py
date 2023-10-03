@@ -21,7 +21,8 @@ class Branch:
         self.features_upper=[np.inf]*self.number_of_features #upper bound of the feature for the given rule
         self.features_lower=[-np.inf]*self.number_of_features #lower bound of the feature for the given rule
         self.label_probas=label_probas # 
-        self.number_of_samples=number_of_samples #save number of samples in leaf (not relevant for the current model)
+        # 作者没有用到分支下样本数量，因为工作是构建conjunction的决策树，因此将conjunction同等对待，而conjunction下样本的多少是没有意义的save number of samples in leaf (not relevant for the current model) 
+        self.number_of_samples=number_of_samples 
         self.categorical_features_dict={}
     def addCondition(self, feature, threshold, bound): # 这个称为changeCondition更合适吧，因为是更新上下界的阈值，而不是添加新的条件
         """
