@@ -88,21 +88,19 @@ class ExperimentSetting():
             # 对branches_df加了三列，分别是[setosa][versicolor][virginica]每列上的数值代表了与该分支匹配的示例对应三个类别的概率
             for i in range(3): 
                 branches_df[rf.classes_[i]] = [probas[i] for probas in branches_df['probas']]
-                print("branches_df[rf.classes_[i]]: ")
-                print(branches_df[rf.classes_[i]])
-                print()
+                # print("branches_df[rf.classes_[i]]: ")
+                # print(branches_df[rf.classes_[i]])
+                # print()
             print("branches_df_new:")
             print(branches_df)
+            print("branches_df['probas'].mean()")
+            print(branches_df['probas'].mean())
             df_dict = {}
             for col in branches_df.columns:
-
-                # 对DataFrame取一整列是Series类型，而加.values()后就变成了array类型
+                # 对DataFrame取一整列是Series类型，是有索引+数值的，而加.values()后就变成了array类型，纯数值型
                 df_dict[col] = branches_df[col].values # 将branches_df的每一列转换成array类型
-                print("df_dict[col]:")
-                print(type(df_dict[col]))
-                print(df_dict[col])
-            new_model = Node([True]*len(branches_df))
-            new_model.split(df_dict)
+            new_model = Node([True]*len(branches_df)) # 这是决策树的根节点
+            new_model.split(df_dict) # 这是一个递归生成树的过程
             result_dict['new model training time'] = (datetime.datetime.now() - start_temp).total_seconds()
 
             #Train a decision tree
