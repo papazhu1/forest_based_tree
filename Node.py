@@ -4,15 +4,15 @@ from SplittingFunctions import *
 from scipy.stats import entropy
 EPSILON=0.000001
 class Node():
-    def __init__(self,mask): # 在决策树新建的时候，传入了长度为len(branches_df)的全是true的列表
+    def __init__(self,mask): # 在决策树新建的时候，传入了长度为 conjunction 个数的全是true的列表
         self.mask = mask
     def split(self,df):
         #if np.sum(self.mask)==1 or self.has_same_class(df):
-        if np.sum(self.mask) == 1: # mask中只剩一个true的时候，说明这个节点已经是叶子节点了
+        if np.sum(self.mask) == 1: # mask中只剩一个true的时候，说明就只剩下一条规则了，因此这个节点是叶子节点
             self.left=None
             self.right=None
             return
-        self.features = [int(i.split('_')[0]) for i in df.keys() if 'upper' in str(i)]
+        self.features = [int(i.split('_')[0]) for i in df.keys() if 'upper' in str(i)] # 当前的conjunction中特征全是以 ***_upper、 ***_lower的形式存在的,split就可以获得特征名
 
         self.split_feature, self.split_value = self.select_split_feature(df)
         self.create_mask(df)
@@ -34,9 +34,9 @@ class Node():
             return False
         return True
 
-    def create_mask(self,df):
-
-        self.left_mask = df[str(self.split_feature) + "_upper"] <= self.split_value
+    def create_mask(self,df): # 判断每个conjuntion划分到了左子树还是右子树，或者划分值在conjunction该特征的区间内
+        # 每个结果都类似为[True,False,False,True,False,True,False,False], 是一个 boolean list 
+        self.left_mask = df[str(self.split_feature) + "_upper"] <= self.split_value 
         self.right_mask = df[str(self.split_feature) + '_lower'] >= self.split_value
         self.both_mask = ((df[str(self.split_feature) + '_lower'] < self.split_value) & (df[str(self.split_feature) + "_upper"] > self.split_value))
         #self.both_mask = [True if self.split_value < upper and self.split_value > lower else False for lower, upper in
@@ -52,11 +52,11 @@ class Node():
         feature = min(feature_to_metric, key=feature_to_metric.get)
         return feature,feature_to_value[feature]
 
-    def check_feature_split_value(self,df,feature): # 对当前遍历道德被划分特征选出最好的划分点函数
-        value_to_metric={}
-        values=list(set(list(df[str(feature)+'_upper'][self.mask])+list(df[str(feature)+'_lower'][self.mask])))
+    def check_feature_split_value(self,df,feature): # 对当前遍历的划分特征选出最好的划分点函数
+        value_to_metric={} # value_to_metric是一个字典，包含三个划分点，以及每个划分点的metric
+        values=list(set(list(df[str(feature)+'_upper'][self.mask])+list(df[str(feature)+'_lower'][self.mask]))) # 索引类型是boolean arrays，找出当前还是true的值
         np.random.shuffle(values)
-        values=values[:3]
+        values=values[:3] # 那意思就是随机抽取三个划分点？？？
         for value in values:
             left_mask=[True if upper <= value  else False for upper in df[str(feature)+"_upper"]]
             right_mask=[True if lower>= value else False for lower in df[str(feature)+'_lower']]
@@ -65,10 +65,10 @@ class Node():
         val=min(value_to_metric,key=value_to_metric.get)
         return val,value_to_metric[val]
 
-    def get_value_metric(self,df,left_mask,right_mask,both_mask):
-        l_df_mask=np.logical_and(np.logical_or(left_mask,both_mask),self.mask)
-        r_df_mask=np.logical_and(np.logical_or(right_mask,both_mask),self.mask)
-        if np.sum(l_df_mask)==0 or np.sum(r_df_mask)==0:
+    def get_value_metric(self,df,left_mask,right_mask,both_mask): # 计算划分点的评分
+        l_df_mask=np.logical_and(np.logical_or(left_mask,both_mask),self.mask) # 利用逻辑或，将分到左子树和分到both的都选出来，再挑出还在当前节点下的
+        r_df_mask=np.logical_and(np.logical_or(right_mask,both_mask),self.mask) # 利用逻辑或，将分到右子树和分到both的都选出来，再挑出还在当前节点下的
+        if np.sum(l_df_mask)==0 or np.sum(r_df_mask)==0: # 如果左子树或者右子树为空，则返回无穷大
             return np.inf
         l_entropy,r_entropy=self.calculate_entropy(df,l_df_mask),self.calculate_entropy(df,r_df_mask)
         l_prop=np.sum(l_df_mask)/len(l_df_mask)
