@@ -103,11 +103,14 @@ class Node():
     def calculate_entropy(self,test_df,test_df_mask):
         x = test_df['probas'][test_df_mask].mean() # 对conjunction的概率求均值，对每个conjunction的概率同等对待，没有因为conjunction包含的样本数印象
         return entropy(x/x.sum())
-    def count_depth(self):
+    
+
+    # 以下函数没有被用到，应该是测试的时候用
+    def count_depth(self): # 计算树的深度，应该测试的时候用
         if self.right==None:
             return 1
         return max(self.left.count_depth(),self.right.count_depth())+1
-    def number_of_children(self):
+    def number_of_children(self): # 因为决策树的特性，只要有一个子树，就一定有两个子树，所以可以只判断是否有右子树
         if self.right==None:
             return 1
         return 1+self.right.number_of_children()+self.left.number_of_children()
