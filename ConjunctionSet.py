@@ -8,7 +8,7 @@ import random
 
 
 class ConjunctionSet():
-    def __init__(self, feature_names, original_data, pruning_x, pruning_y,
+    def __init__(self, progress, feature_names, original_data, pruning_x, pruning_y,
                  model, feature_types, amount_of_branches_threshold, filter_approach='probability',
                  exclusion_starting_point=5,
                  minimal_forest_size=10, exclusion_threshold=0.8):
@@ -18,20 +18,30 @@ class ConjunctionSet():
         self.exclusion_threshold = exclusion_threshold
         self.label_names = model.classes_
         self.relevant_indexes = reduce_error_pruning(self.model, pruning_x, pruning_y, minimal_forest_size)
+        # self.relevant_indexes = [i for i in range(len(self.model.estimators_))]
         self.feature_types = feature_types
         self.filter_approach = filter_approach
         self.exclusion_starting_point = exclusion_starting_point
         self.set_ecdf(original_data)
         self.get_ranges(original_data)
-        self.generateBranches()
+        self.generateBranches(progress)
         # self.get_associative_leaves(np.concatenate((original_data,pruning_x)))
         self.number_of_branches_per_iteration = []
-        self.buildConjunctionSet()
+        self.buildConjunctionSet(progress)
 
-    def generateBranches(self):
+    def generateBranches(self, progress):
         trees = [estimator.tree_ for estimator in self.model.estimators_]
-        self.branches_lists = [self.get_tree_branches(tree_) for i, tree_ in enumerate(trees) if
-                               i in self.relevant_indexes]  # 对每棵树求分支，汇总成分支列表的列表
+
+        # 对于生成分支的过程，是非常快的，所以不需要进度条
+        # task_generate_branches = progress.add_task("[red]Generating branches for RF...", total=len(trees))
+        self.branches_lists = []
+        for i, tree_ in enumerate(trees):
+            if i in self.relevant_indexes:
+                self.branches_lists.append(self.get_tree_branches(tree_))
+                # progress.update(task_generate_branches, advance=1)
+            # 一般tree_relevant_num 只有0.1
+            # print('tree_relevant_num', len(self.relevant_indexes)/len(trees))
+        # progress.stop_task(task_generate_branches)
         for list_indx, branch_list in enumerate(self.branches_lists):  # 枚举分支列表，每个分支列表由一棵树生成
             for leaf_index, branch in enumerate(branch_list):  # 枚举分支列表中的分支
                 branch.leaves_indexes = [str(list_indx) + '_' + str(leaf_index)]  # 叶子索引名称是列表序号+叶子序号
@@ -60,8 +70,10 @@ class ConjunctionSet():
             node_id = ancestor_index[0]  # 从子节点往根节点找
         return new_branch
 
-    def buildConjunctionSet(self):  # 注意区分连接集和分支集，连接集是分支被合并后的集合
+    def buildConjunctionSet(self, progress):  # 注意区分连接集和分支集，连接集是分支被合并后的集合
         conjunctionSet = self.branches_lists[0]  # 初始化连接集，只含第一棵树的分支列表
+        task_build_conjunction_set = progress.add_task("[red]Building conjunction set for RF...", total=len(self.branches_lists[0:]))
+        progress.update(task_build_conjunction_set, advance=1)
         excluded_branches = []
         for i, branch_list in enumerate(self.branches_lists[1:]):
             print('Iteration ' + str(i + 1) + ": " + str(len(conjunctionSet)) + " conjunctions")
@@ -72,6 +84,7 @@ class ConjunctionSet():
                 conjunctionSet, this_iteration_exclusions = self.exclude_branches_from_cs(conjunctionSet,
                                                                                           self.exclusion_threshold)
                 excluded_branches.extend(this_iteration_exclusions)
+            progress.update(task_build_conjunction_set, advance=1)
 
         self.conjunctionSet = excluded_branches + conjunctionSet
         print('Final CS size: ' + str(len(self.conjunctionSet)))
