@@ -19,7 +19,9 @@ class NewModelBuilder():
     def new_model_processing(self):
         self.tree_features=[]
         self.tree_thresholds=[]
+        print(self.input_feature_names)
         original_features = [(int(i.split('<')[0]), float(i.split('<')[1])) for i in self.input_feature_names]
+
         t=self.model.tree_
         for feature, threshold in zip(t.feature, t.threshold):
             if feature < 0:
