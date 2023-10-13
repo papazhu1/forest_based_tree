@@ -142,7 +142,10 @@ class ExperimentSetting():
 
             result_list = [rusult_rf,result_new_model,result_dt]
             result_df = pd.DataFrame(result_list)
-            result_df.index = ['rf', 'new_model', 'dt']
+            index_1 = 'iter_{}_rf'.format(i)
+            index_2 = 'iter_{}_new_model'.format(i)
+            index_3 = 'iter_{}_dt'.format(i)
+            result_df.index = [index_1, index_2, index_3]
 
             # 将概率向量列表去除掉，因为没办法用csv文件来分析
             result_df = result_df.drop('probas',axis=1)
@@ -158,8 +161,11 @@ class ExperimentSetting():
             elapsed_time = toc - tic
             print('Cur Iteration Time Elapsed: ', elapsed_time)
 
-            with open('result_{}.csv'.format(i), 'a') as f:
-                result_df.to_csv(f, header=False)
+            with open('result.csv', 'a') as f:
+                if i == 0:
+                    result_df.to_csv(f, header=True)
+                else:                    
+                    result_df.to_csv(f, header=False)
 
         
         progress.stop()
