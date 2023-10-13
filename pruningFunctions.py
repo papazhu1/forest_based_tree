@@ -26,6 +26,8 @@ def select_index(rf,current_indexes,validation_x,validation_y):
     best_index = max(options_auc, key=options_auc.get)
     best_auc = options_auc[best_index]
     return best_auc,current_indexes+[best_index]
+
+# 发现主要时间都花在了这个函数上， 当前设置为min_size = 10
 def reduce_error_pruning(model,validation_x,validation_y,min_size):
     best_auc,current_indexes = select_index(model,[],validation_x,validation_y)
     while len(current_indexes) <= model.n_estimators:
