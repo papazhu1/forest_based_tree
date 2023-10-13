@@ -14,8 +14,8 @@ from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_curve, auc
 from sklearn.metrics import cohen_kappa_score
 import pickle
-
-
+from rich.progress import Progress
+import time
 
 class ExperimentSetting():
     def __init__(self,number_of_branches_threshold,df_names,number_of_estimators,fixed_params,
@@ -30,14 +30,23 @@ class ExperimentSetting():
         for threshold in self.number_of_branches_threshold: # 现在就只有一个[3000]
             for df_name in self.df_names: # 现在就只有一个['iris']
                 df, x_columns, y_column, feature_types = get_dataset_by_string(df_name)
+                print("df_name: ", df_name)
+                print("len_x_columns: ", len(x_columns), " len_y_column: ", len(y_column), " feature_types: ", feature_types)
                 d = {}
                 d['max_number_of_branches'] = threshold
                 d['df_name'] = df_name
                 d['number_of_estimators'] = self.number_of_estimators
                 print(d)
+
+                # 传给run_experiment的参数有
+                # 最多分支数，数据集，X的列名，y的列名，X的类型，特征类型，数据集名称，每个森林的决策树数量
                 self.run_experiment(threshold, df, x_columns, y_column, feature_types, d)
     def run_experiment(self,branch_probability_threshold,df,x_columns,y_column,feature_types,hyper_parameters_dict):
+        progress = Progress()
+        task1 = progress.add_task(hyper_parameters_dict['df_name'] + '_iterate', total=self.num_of_iterations)
+        progress.start()
         for i in range(self.num_of_iterations):
+            tic = time.time()
             print(i)
             np.random.seed(i)
             num_of_estimators=hyper_parameters_dict['number_of_estimators']
@@ -65,7 +74,7 @@ class ExperimentSetting():
 
             #Create the conjunction set
             start_temp = datetime.datetime.now()
-            cs = ConjunctionSet(x_columns, trainAndValidation_x,trainAndValidation_x,trainAndValidation_y, rf, feature_types,
+            cs = ConjunctionSet(progress, x_columns, trainAndValidation_x,trainAndValidation_x,trainAndValidation_y, rf, feature_types,
                                 hyper_parameters_dict['max_number_of_branches'])
             result_dict['conjunction set training time'] = (datetime.datetime.now() - start_temp).total_seconds()
             result_dict['number of branches per iteration'] = cs.number_of_branches_per_iteration
@@ -86,8 +95,8 @@ class ExperimentSetting():
             
             # 原本是2，我想着iris数据集有3个类别，所以改成3
             # 对branches_df加了三列，分别是[setosa][versicolor][virginica]每列上的数值代表了与该分支匹配的示例对应三个类别的概率
-            for i in range(3): 
-                branches_df[rf.classes_[i]] = [probas[i] for probas in branches_df['probas']]
+            for j in range(3): 
+                branches_df[rf.classes_[j]] = [probas[j] for probas in branches_df['probas']]
                 # print("branches_df[rf.classes_[i]]: ")
                 # print(branches_df[rf.classes_[i]])
                 # print()
@@ -100,7 +109,9 @@ class ExperimentSetting():
                 # 对DataFrame取一整列是Series类型，是有索引+数值的，而加.values()后就变成了array类型，纯数值型
                 df_dict[col] = branches_df[col].values # 将branches_df的每一列转换成array类型
             new_model = Node([True]*len(branches_df)) # 这是决策树的根节点
+            print('start_split')
             new_model.split(df_dict) # 这是一个递归生成树的过程
+            print('finish_split')
             result_dict['new model training time'] = (datetime.datetime.now() - start_temp).total_seconds()
 
             #Train a decision tree
@@ -118,31 +129,63 @@ class ExperimentSetting():
 
             '''
             
-            #record experiment results
-            result_dict.update(self.ensemble_measures(test_x,test_y,rf))
-            result_dict.update(self.new_model_measures(test_x,test_y,new_model,branches_df))
-            result_dict.update(self.decision_tree_measures(test_x,test_y,decision_tree_model))
+            # 对随机森林进行评估
+            rusult_rf = self.ensemble_measures(test_x,test_y,rf)
+            
+            # 这个是合并branch变成决策树的新模型
+            result_new_model = self.new_model_measures(test_x,test_y,new_model,branches_df)
+
+            # 如果单棵决策树都比new_model好，那就直接使用决策树就好了
+            result_dt = self.decision_tree_measures(test_x,test_y,decision_tree_model)
+
             # result_dict.update(self.cmm_tree_measures(test_x,test_y,cmm_dt))
+
+            result_list = [rusult_rf,result_new_model,result_dt]
+            result_df = pd.DataFrame(result_list)
+            result_df.index = ['rf', 'new_model', 'dt']
+
+            # 将概率向量列表去除掉，因为没办法用csv文件来分析
+            result_df = result_df.drop('probas',axis=1)
+            print("result_df:")
+            print(result_df)
 
             with open(output_path,'wb') as fp:
                 pickle.dump(result_dict, fp)
             self.experiments.append(result_dict)
+            progress.update(task1, advance=1)
+
+            toc = time.time()
+            elapsed_time = toc - tic
+            print('Cur Iteration Time Elapsed: ', elapsed_time)
+
+            with open('result_{}.csv'.format(i), 'a') as f:
+                result_df.to_csv(f, header=False)
+
+        
+        progress.stop()
     def decision_tree_measures(self,X,Y,dt_model):
         result_dict={}
         probas=[]
         depths=[]
         for inst in X:
+            # 记录树的深度和预测结果
             pred,dept=self.tree_depth_and_prediction(inst,dt_model.tree_)
             probas.append(pred)
             depths.append(dept)
         predictions=dt_model.predict(X)
-        result_dict['decision_tree_average_depth'] = np.mean(depths)
-        result_dict['decision_tree_min_depth'] = np.min(depths)
-        result_dict['decision_tree_max_depth'] = np.max(depths)
-        result_dict['decision_tree_accuracy'] = np.sum(predictions == Y) / len(Y)
-        result_dict['decision_tree_auc'] = self.get_auc(Y, np.array(probas),dt_model.classes_)
-        result_dict['decision_tree_kappa'] = cohen_kappa_score(Y,predictions)
+        result_dict['average_depth'] = np.mean(depths)
+        result_dict['min_depth'] = np.min(depths)
+        result_dict['max_depth'] = np.max(depths)
+
+        # 计算精度、AUC、kappa系数
+        result_dict['accuracy'] = np.sum(predictions == Y) / len(Y)
+        result_dict['auc'] = self.get_auc(Y, np.array(probas),dt_model.classes_)
+        result_dict['kappa'] = cohen_kappa_score(Y,predictions)
+
+        result_dict['n_nodes'] = dt_model.tree_.node_count
+        result_dict['probas'] = probas
         return result_dict
+    
     def cmm_tree_measures(self,X,Y,dt_model):
         return {k.replace('decision_tree','cmm_tree'):v for k,v in self.decision_tree_measures(X,Y,dt_model).items()}
     def new_model_measures(self,X,Y,new_model,branches_df):
@@ -153,27 +196,28 @@ class ExperimentSetting():
             probas.append(prob)
             depths.append(depth)
         predictions=[self.classes_[i] for i in np.array([np.argmax(prob) for prob in probas])]
-        result_dict['new_model_average_depth']=np.mean(depths)
-        result_dict['new_model_min_depth'] = np.min(depths)
-        result_dict['new_model_max_depth'] = np.max(depths)
-        result_dict['new_model_accuracy'] = np.sum(predictions==Y) / len(Y)
-        result_dict['new_model_auc'] = self.get_auc(Y,np.array(probas),self.classes_)
-        result_dict['new_model_kappa'] = cohen_kappa_score(Y,predictions)
-        result_dict['new_model_number_of_nodes'] = new_model.number_of_children()
-        result_dict['new_model_probas'] = probas
+        result_dict['average_depth']=np.mean(depths)
+        result_dict['min_depth'] = np.min(depths)
+        result_dict['max_depth'] = np.max(depths)
+        result_dict['accuracy'] = np.sum(predictions==Y) / len(Y)
+        result_dict['auc'] = self.get_auc(Y,np.array(probas),self.classes_)
+        result_dict['kappa'] = cohen_kappa_score(Y,predictions)
+        result_dict['n_nodes'] = new_model.number_of_children()
+        result_dict['probas'] = probas
 
         return result_dict
     def ensemble_measures(self,X,Y,rf):
         result_dict={}
         predictions,depths=self.ensemble_prediction(X,rf)
-        result_dict['ensemble_average_depth']=np.mean(depths)
-        result_dict['ensemble_min_depth'] = np.min(depths)
-        result_dict['ensemble max_depth'] = np.max(depths)
+        result_dict['average_depth']=np.mean(depths)
+        result_dict['min_depth'] = np.min(depths)
+        result_dict['max_depth'] = np.max(depths)
         ensemble_probas=rf.predict_proba(X)
-        result_dict['ensemble_accuracy'] = np.sum(rf.predict(X)==Y)/len(Y)
-        result_dict['ensemble_auc'] = self.get_auc(Y,ensemble_probas,rf.classes_)
-        result_dict['ensemble_kappa'] = cohen_kappa_score(Y,rf.predict(X))
-        result_dict['ensemble_probas'] = ensemble_probas
+        result_dict['accuracy'] = np.sum(rf.predict(X)==Y)/len(Y)
+        result_dict['auc'] = self.get_auc(Y,ensemble_probas,rf.classes_)
+        result_dict['kappa'] = cohen_kappa_score(Y,rf.predict(X))
+        result_dict['n_nodes'] = sum([t.tree_.node_count for t in rf.estimators_])
+        result_dict['probas'] = ensemble_probas
         return result_dict
     def ensemble_prediction(self,X, rf):
         predictions = []
